@@ -111,7 +111,7 @@ defmodule SpandexOTLP.Sender do
         {:ok, state}
 
       {:error, reason} ->
-        {:error, reason}
+        :ignore
     end
   end
 

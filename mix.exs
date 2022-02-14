@@ -10,7 +10,7 @@ defmodule SpandexOTLP.MixProject do
       description:
         "An adapter for Spandex that allows the export of tracing data to an OTLP compatible service.",
       version: @version,
-      elixir: "~> 1.11.0",
+      elixir: "~> 1.13.0",
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
       deps: deps(),
