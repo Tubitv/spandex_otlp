@@ -88,10 +88,7 @@ defmodule SpandexOTLP.Sender do
   """
   @spec start_link(opts :: Keyword.t()) :: GenServer.on_start()
   def start_link(opts) do
-    case GenServer.start_link(__MODULE__, opts, name: __MODULE__) do
-      {:ok, s} -> {:ok, s}
-      {:error, e} -> {:stop, e}
-    end
+    GenServer.start_link(__MODULE__, opts, name: __MODULE__)
   end
 
   @doc false
