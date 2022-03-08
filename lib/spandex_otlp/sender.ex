@@ -110,7 +110,7 @@ defmodule SpandexOTLP.Sender do
 
         {:ok, state}
 
-      {:error, reason} ->
+      {:error, _reason} ->
         :ignore
     end
   end
@@ -181,7 +181,7 @@ defmodule SpandexOTLP.Sender do
   defp send_batch(state) do
     {state, resource_spans} = empty_spans(state)
 
-    request = ExportTraceServiceRequest.new(resource_spans: resource_spans)
+    request = ExportTraceServiceRequest.new(resource_spans: resource_spans) |> IO.inspect()
 
     case TraceService.Stub.export(state.channel, request, metadata: state.metadata) do
       {:ok, _response} ->
