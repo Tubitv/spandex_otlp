@@ -57,7 +57,7 @@ defmodule SpandexOTLP.MixProject do
 
   defp deps do
     [
-      {:grpc, "~> 0.7.0", organization: "tubitv"}
+      {:grpc, "~> 0.7.0", organization: "tubitv"},
       {:spandex, "~> 3.0"},
       {:telemetry, "~> 0.4"},
       {:credo, "~> 1.5", only: [:dev, :test], runtime: false},
