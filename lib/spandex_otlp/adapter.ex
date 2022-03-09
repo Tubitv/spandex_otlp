@@ -26,6 +26,18 @@ defmodule SpandexOTLP.Adapter do
   @impl true
   def default_sender, do: SpandexOTLP.Sender
 
+  def get_and_decode_plug_header(conn, header_name) do
+    conn |> get_first_header(header_name) |> decode_header_value()
+  end
+
+  def get_and_decode_spandex_header(headers, header_name) do
+    headers |> get_header(header_name) |> decode_header_value()
+  end
+
+  @spec decode_header_value(String.t()) :: {:ok, binary() | nil} | :error
+  def decode_header_value(nil), do: {:ok, nil}
+  def decode_header_value(string), do: Base.decode64(string)
+
   @doc """
   """
   @impl Spandex.Adapter
@@ -33,9 +45,9 @@ defmodule SpandexOTLP.Adapter do
           {:ok, SpanContext.t()}
           | {:error, atom()}
   def distributed_context(%Plug.Conn{} = conn, _opts) do
-    with {:ok, trace_id} = get_and_decode_plug_header("x-b3-traceid"),
-         {:ok, parent_id} = get_and_decode_plug_header("x-b3-parentspanid"),
-         {:ok, priority} = get_and_decode_plug_header("x-b3-sampled") do
+    with {:ok, trace_id} <- get_and_decode_plug_header(conn, "x-b3-traceid"),
+         {:ok, parent_id} <- get_and_decode_plug_header(conn, "x-b3-parentspanid"),
+         {:ok, priority} <- get_and_decode_plug_header(conn, "x-b3-sampled") do
       if is_nil(trace_id) || is_nil(parent_id) do
         {:error, :no_distributed_trace}
       else
@@ -47,26 +59,15 @@ defmodule SpandexOTLP.Adapter do
     end
   end
 
-  def get_and_decode_plug_header(conn, header_name) do
-    conn |> get_first_header(header_name) |> decode_header_value()
-  end
-
-  def get_and_decode_spandex_header(headers, header_name) do
-    headers |> get_header(header_name) |> decode_header_value()
-  end
-
-  def decode_header_value(nil), do: {:ok, nil}
-  def decode_header_value(string), do: Base.decode64(string)
-
   @impl Spandex.Adapter
   @spec distributed_context(headers :: Spandex.headers(), Tracer.opts()) ::
           {:ok, SpanContext.t()}
           | {:error, atom()}
   def distributed_context(headers, _opts) do
     ## TODO: not yet sure whether these need to be decoded.
-    with {:ok, trace_id} <- get_and_decode_spandex_header("x-b3-traceid"),
-         {:ok, parent_id} <- get_and_decode_spandex_header("x-b3-parentspanid"),
-         {:ok, priority} <- get_and_decode_spandex_header("x-b3-sampled") do
+    with {:ok, trace_id} <- get_and_decode_spandex_header(headers, "x-b3-traceid"),
+         {:ok, parent_id} <- get_and_decode_spandex_header(headers, "x-b3-parentspanid"),
+         {:ok, priority} <- get_and_decode_spandex_header(headers, "x-b3-sampled") do
       if is_nil(trace_id) || is_nil(parent_id) do
         {:error, :no_distributed_trace}
       else
