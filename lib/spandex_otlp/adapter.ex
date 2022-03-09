@@ -31,32 +31,39 @@ defmodule SpandexOTLP.Adapter do
   @impl Spandex.Adapter
   @spec distributed_context(conn :: Plug.Conn.t(), Tracer.opts()) ::
           {:ok, SpanContext.t()}
-          | {:error, :no_distributed_trace}
+          | {:error, atom()}
   def distributed_context(%Plug.Conn{} = conn, _opts) do
-    trace_id = get_first_header(conn, "x-b3-traceid")
-    parent_id = get_first_header(conn, "x-b3-parentspanid")
-    priority = get_first_header(conn, "x-b3-sampled")
-
-    if is_nil(trace_id) || is_nil(parent_id) do
-      {:error, :no_distributed_trace}
+    with {:ok, trace_id} = conn |> get_first_header("x-b3-traceid") |> Base.decode64(),
+         {:ok, parent_id} = conn |> get_first_header("x-b3-parentspanid") |> Base.decode64(),
+         {:ok, priority} = conn |> get_first_header("x-b3-sampled") |> Base.decode64() do
+      if is_nil(trace_id) || is_nil(parent_id) do
+        {:error, :no_distributed_trace}
+      else
+        {:ok, %SpanContext{trace_id: trace_id, parent_id: parent_id, priority: priority}}
+      end
     else
-      {:ok, %SpanContext{trace_id: trace_id, parent_id: parent_id, priority: priority}}
+      :error ->
+        {:error, :bad_zipkin_headers}
     end
   end
 
   @impl Spandex.Adapter
   @spec distributed_context(headers :: Spandex.headers(), Tracer.opts()) ::
           {:ok, SpanContext.t()}
-          | {:error, :no_distributed_trace}
+          | {:error, atom()}
   def distributed_context(headers, _opts) do
-    trace_id = get_header(headers, "x-b3-traceid")
-    parent_id = get_header(headers, "x-b3-parentspanid")
-    priority = get_header(headers, "x-b3-sampled")
-
-    if is_nil(trace_id) || is_nil(parent_id) do
-      {:error, :no_distributed_trace}
+    ## TODO: not yet sure whether these need to be decoded.
+    with {:ok, trace_id} <- headers |> get_header("x-b3-traceid") |> Base.decode64(),
+         {:ok, parent_id} <- headers |> get_header("x-b3-parentspanid") |> Base.decode64(),
+         {:ok, priority} <- headers |> get_header("x-b3-sampled") |> Base.decode64() do
+      if is_nil(trace_id) || is_nil(parent_id) do
+        {:error, :no_distributed_trace}
+      else
+        {:ok, %SpanContext{trace_id: trace_id, parent_id: parent_id, priority: priority}}
+      end
     else
-      {:ok, %SpanContext{trace_id: trace_id, parent_id: parent_id, priority: priority}}
+      :error ->
+        {:error, :bad_zipkin_headers}
     end
   end
 
